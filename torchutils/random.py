@@ -1,4 +1,17 @@
 # -*- coding: utf-8 -*-
+'''
+torchutils.random
+
+https://pytorch.org/docs/stable/notes/randomness.html
+
+We cannot recover the previous state.
+It is because torch / np does not provide such functions for GPU or for np.Generator,
+and some of their RNG code are in C. We cannnot simply monkeypatch the python part.
+
+Our strategy is:
+1. setting a list of random seed from CPU (usually based on MT19997) as meta_data_state.
+2. monkeypatch the random seed every N epochs.
+'''
 
 from typing import Optional
 import torch
@@ -53,6 +66,7 @@ def init_meta_rng(
 
 def reset_meta_rng():
     global _META_RNG
+
     _META_RNG = None
 
 
@@ -94,7 +108,6 @@ def set_meta_rng_state(rand_state: RandState):
     '''
     Set meta random state
     '''
-    global _META_RNG
     _META_RNG.setstate(rand_state)
 
 
@@ -146,7 +159,7 @@ def _monkeypatch_random(seed: Optional[int] = None, cuda_deterministic: bool = F
 def _get_seed(seed_range: int = _DEFAULT_SEED_RANGE) -> int:
     global _SEED
 
-    assert _META_RNG is not None, f'_META_RNG is None'
+    assert _META_RNG is not None, 'torchutils.random._get_seed: _META_RNG is None'
 
     _SEED = _META_RNG.randrange(seed_range)
 

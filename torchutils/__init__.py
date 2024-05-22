@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+'''
+torchutils
+
+utility functions for pytorch
+'''
 
 # random
 from .random import init_meta_rng
