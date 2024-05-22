@@ -19,3 +19,6 @@ from .random import set_meta_rng_state
 # device
 from .device import monkeypatch_device
 from .device import device
+
+# index
+from .index import index
