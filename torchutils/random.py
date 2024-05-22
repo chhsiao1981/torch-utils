@@ -7,35 +7,48 @@ import numpy as np
 
 from torchutils.types import RandState
 
-_META_RNG = None
-_SEED = None
-_SEED_RANGE = 0
-
 _DEFAULT_META_SEED = 9223372036854775783  # The God Number (closest to 2^63-1)
-_DEFAULT_META_RAND_RANGE = 170141183460469231731687303715884105727  # 2^127 - 1
-_NP_MAX_SEED_RANGE = 4294967287  # 2147483659 with _DEFAULT_META_SEED
-_TORCH_MAX_SEED_RANGE = 4294967287  # 2147483659 with _DEFAULT_META_SEED
+_DEFAULT_SEED_RANGE = 170141183460469231731687303715884105727  # 2^127 - 1
+_DEFAULT_MAX_NP_TORCH_SEED_RANGE = 4294967287  # 2147483659 with _DEFAULT_META_SEED
 
-THE_SEED = None
+_META_RNG = None
+_SEED_RANGE = 0
+_MAX_NP_TORCH_SEED_RANGE = _DEFAULT_MAX_NP_TORCH_SEED_RANGE
+
+_META_SEED = None
+_SEED = None
+
+PY_SEED = None
 NP_SEED = None
 TORCH_SEED = None
 
 
-def init_meta_rng(meta_seed: int = _DEFAULT_META_SEED, seed_range: int = _DEFAULT_META_RAND_RANGE, rand_state: Optional[RandState] = None):
+def init_meta_rng(
+    meta_seed: int = _DEFAULT_META_SEED,
+    seed_range: int = _DEFAULT_SEED_RANGE,
+    rand_state: Optional[RandState] = None,
+    max_np_torch_seed_range: int = _DEFAULT_MAX_NP_TORCH_SEED_RANGE,
+):
     '''
     initialize meta rng
     '''
+    global _META_SEED
     global _META_RNG
     global _SEED_RANGE
+    global _MAX_NP_TORCH_SEED_RANGE
 
     if _META_RNG is not None:
+        # already init
         return
 
     _META_RNG = random.Random(meta_seed)
     _SEED_RANGE = seed_range
+    _MAX_NP_TORCH_SEED_RANGE = max_np_torch_seed_range
+
+    _META_SEED = meta_seed
 
     if rand_state is not None:
-        set_meta_state(rand_state)
+        set_meta_rng_state(rand_state)
 
 
 def reset_meta_rng():
@@ -43,12 +56,17 @@ def reset_meta_rng():
     _META_RNG = None
 
 
-def monkeypatch_meta_rng(meta_seed: int = _DEFAULT_META_SEED, seed_range: int = _DEFAULT_META_RAND_RANGE, rand_state: Optional[RandState] = None):
+def monkeypatch_meta_rng(
+    meta_seed: int = _DEFAULT_META_SEED,
+    seed_range: int = _DEFAULT_SEED_RANGE,
+    rand_state: Optional[RandState] = None,
+    max_np_torch_seed_range: int = _DEFAULT_MAX_NP_TORCH_SEED_RANGE,
+):
     '''
     initialize meta rng and do monkeypatch.
     '''
 
-    init_meta_rng(meta_seed=meta_seed, rand_state=rand_state, seed_range=seed_range)
+    init_meta_rng(meta_seed=meta_seed, rand_state=rand_state, seed_range=seed_range, max_np_torch_seed_range=max_np_torch_seed_range)
     monkeypatch_seed()
 
 
@@ -65,14 +83,14 @@ def monkeypatch_seed():
     _monkeypatch_random(seed=seed, cuda_deterministic=True)
 
 
-def get_meta_state() -> RandState:
+def get_meta_rng_state() -> RandState:
     '''
     Get meta random state
     '''
     return _META_RNG.getstate()
 
 
-def set_meta_state(rand_state: RandState):
+def set_meta_rng_state(rand_state: RandState):
     '''
     Set meta random state
     '''
@@ -96,24 +114,24 @@ def _monkeypatch_random(seed: Optional[int] = None, cuda_deterministic: bool = F
       seed: the seed generated from _META_RNG.
       cuda_deterministic: whether to use deterministic cuda.
     '''
-    global THE_SEED
+    global PY_SEED
     global NP_SEED
     global TORCH_SEED
     if seed is None:
-        THE_SEED = None
+        PY_SEED = None
         NP_SEED = None
         TORCH_SEED = None
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
         return
 
-    np_seed = seed % _NP_MAX_SEED_RANGE
-    torch_seed = seed % _TORCH_MAX_SEED_RANGE
+    np_seed = seed % _MAX_NP_TORCH_SEED_RANGE
+    torch_seed = seed % _MAX_NP_TORCH_SEED_RANGE
     random.seed(seed)
     np.random.seed(np_seed)
     torch.manual_seed(torch_seed)
 
-    THE_SEED = seed
+    PY_SEED = seed
     NP_SEED = np_seed
     TORCH_SEED = torch_seed
 
@@ -125,7 +143,7 @@ def _monkeypatch_random(seed: Optional[int] = None, cuda_deterministic: bool = F
         torch.backends.cudnn.deterministic = False
 
 
-def _get_seed(seed_range: int = _DEFAULT_META_RAND_RANGE) -> int:
+def _get_seed(seed_range: int = _DEFAULT_SEED_RANGE) -> int:
     global _SEED
 
     assert _META_RNG is not None, f'_META_RNG is None'

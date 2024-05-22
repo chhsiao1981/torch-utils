@@ -69,12 +69,12 @@ class TestRandom(unittest.TestCase):
 
         assert (nums1 != nums2).any()
 
-    def test_set_meta_state(self):
+    def test_set_meta_rng_state(self):
         # if we monkeypatch only 1 time, we cannot get repeated rand-numbers.
         torchutils_random.monkeypatch_meta_rng()
         nums0 = [random.random() for _0 in range(10)]
 
-        state = torchutils_random.get_meta_state()
+        state = torchutils_random.get_meta_rng_state()
 
         nums1 = [random.random() for _0 in range(10)]
 
@@ -88,19 +88,19 @@ class TestRandom(unittest.TestCase):
         assert nums1 != nums2
 
         # we can get repeated rand-numbers if we set meta-state before monkeypatch_seed.
-        torchutils_random.set_meta_state(state)
+        torchutils_random.set_meta_rng_state(state)
         torchutils_random.monkeypatch_seed()
 
         nums3 = [random.random() for _0 in range(10)]
 
         assert nums2 == nums3
 
-    def test_set_meta_state_np(self):
+    def test_set_meta_rng_state_np(self):
         # if we monkeypatch only 1 time, we cannot get repeated rand-numbers.
         torchutils_random.monkeypatch_meta_rng()
         nums0 = np.stack([np.random.random() for _0 in range(10)])
 
-        state = torchutils_random.get_meta_state()
+        state = torchutils_random.get_meta_rng_state()
 
         nums1 = np.stack([np.random.random() for _0 in range(10)])
 
@@ -114,19 +114,19 @@ class TestRandom(unittest.TestCase):
         assert (nums1 != nums2).any()
 
         # we can get repeated rand-numbers if we set meta-state before monkeypatch_seed.
-        torchutils_random.set_meta_state(state)
+        torchutils_random.set_meta_rng_state(state)
         torchutils_random.monkeypatch_seed()
 
         nums3 = np.stack([random.random() for _0 in range(10)])
 
         assert (nums2 == nums3).all()
 
-    def test_set_meta_state_torch(self):
+    def test_set_meta_rng_state_torch(self):
         # if we monkeypatch only 1 time, we cannot get repeated rand-numbers.
         torchutils_random.monkeypatch_meta_rng()
         nums0 = torch.stack([torch.rand(3, 4) for _0 in range(10)])
 
-        state = torchutils_random.get_meta_state()
+        state = torchutils_random.get_meta_rng_state()
 
         nums1 = torch.stack([torch.rand(3, 4) for _0 in range(10)])
 
@@ -140,7 +140,7 @@ class TestRandom(unittest.TestCase):
         assert (nums1 != nums2).any()
 
         # we can get repeated rand-numbers if we set meta-state before monkeypatch_seed.
-        torchutils_random.set_meta_state(state)
+        torchutils_random.set_meta_rng_state(state)
         torchutils_random.monkeypatch_seed()
 
         nums3 = torch.stack([torch.rand(3, 4) for _0 in range(10)])
