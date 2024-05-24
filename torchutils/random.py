@@ -159,7 +159,8 @@ def _monkeypatch_random(seed: Optional[int] = None, cuda_deterministic: bool = F
 def _get_seed(seed_range: int = _DEFAULT_SEED_RANGE) -> int:
     global _SEED
 
-    assert _META_RNG is not None, 'torchutils.random._get_seed: _META_RNG is None'
+    if _META_RNG is not None:
+        raise ValueError('torchutils.random._get_seed: _META_RNG is None')
 
     _SEED = _META_RNG.randrange(seed_range)
 
